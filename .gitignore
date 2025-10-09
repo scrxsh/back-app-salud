@@ -1,11 +1,6 @@
 # IntelliJ IDEA
 .idea/
 
-# Maven wrapper
-.mvn/
-mvnw
-mvnw.cmd
-
 # Compilados
 target/
 src/test/
