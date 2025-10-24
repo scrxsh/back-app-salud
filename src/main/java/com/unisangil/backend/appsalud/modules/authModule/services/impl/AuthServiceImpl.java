@@ -23,6 +23,8 @@ public class AuthServiceImpl implements IAuthService {
     private IJWTUtilityService jwtUtiliyService;
     @Autowired
     private UserValidation userValidation;
+    @Autowired
+    private TwilioOTPService twilioOTPService;
 
     @Override
     public HashMap<String, String> login(LoginDTO login) throws Exception {
@@ -67,7 +69,11 @@ public class AuthServiceImpl implements IAuthService {
             BCryptPasswordEncoder encoder = new BCryptPasswordEncoder(12);
             user.setPassword(encoder.encode(user.getPassword()));
             userRepository.save(user);
-            response.setMsj("Usuario creado con exito!!!");
+
+            String status = twilioOTPService.enviarOTP(user.getPhoneNumber());
+            System.out.println("OTP enviado con estado: " + status);
+
+            response.setMsj("OTP enviado a su teléfono. Esperando verificación!!!");
 
             return response;
 
@@ -75,6 +81,30 @@ public class AuthServiceImpl implements IAuthService {
             throw new RuntimeException(e.toString());
         }
     }
+
+    public ResponseDTO verificarOTP(String phoneNumber, String codigo) {
+        ResponseDTO response = new ResponseDTO();
+
+        String status = twilioOTPService.verifiyOTP(phoneNumber, codigo);
+
+        if ("approved".equals(status)) {
+            Optional<UserEntity> user = userRepository.findByPhoneNumber(phoneNumber);
+            if (user.isPresent()) {
+                user.get().setVerified(true);
+                userRepository.save(user.get());
+                response.setMsj("Verificación completada exitosamente ✅");
+            } else {
+                response.setNumOfErrors(1);
+                response.setMsj("Usuario no encontrado");
+            }
+        } else {
+            response.setNumOfErrors(1);
+            response.setMsj("Código OTP incorrecto o expirado");
+        }
+
+        return response;
+    }
+
 
     private boolean verifiyPassword(String enteredPassword, String storedPassword){
         BCryptPasswordEncoder encoder = new BCryptPasswordEncoder();

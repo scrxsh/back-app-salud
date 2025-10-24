@@ -25,5 +25,9 @@ public class UserEntity {
     private String email;
     @Column(nullable = false)
     private String password;
+    @Column(nullable = false, name = "phone_number")
+    private String phoneNumber;
+    @Column(nullable = false)
+    private boolean verified;
 
 }
